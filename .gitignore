@@ -1,3 +1,8 @@
 Scenes
 Scenes.meta
-
+Models/*
+!Models/obj_file_list.txt
+!Models/obj_file_list.txt.meta
+OBJImport/
+TextMesh Pro/
+*.meta
