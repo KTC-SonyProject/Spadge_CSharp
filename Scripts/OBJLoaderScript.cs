@@ -1,6 +1,6 @@
 using UnityEngine;
 using System.IO; // ファイル操作用
-using Dummiesman;
+using Dummiesman;  // OBJLoaderのためのインポート
 
 public class OBJLoaderScript : MonoBehaviour
 {
@@ -10,6 +10,24 @@ public class OBJLoaderScript : MonoBehaviour
     private string[] objFilePaths; // テキストから読み込んだOBJファイルのパスリスト
     private GameObject currentLoadedObj; // 現在ロード中のオブジェクト
     private int currentObjIndex = 0; // 現在表示中のOBJのインデックス
+    private static OBJLoaderScript instance;
+
+    public static OBJLoaderScript Instance
+    {
+        get
+        {
+            if (instance == null)
+            {
+                instance = FindObjectOfType<OBJLoaderScript>();
+                if (instance == null)
+                {
+                    Debug.LogError("OBJLoaderScriptのインスタンスがシーンにありません！");
+                }
+            }
+            return instance;
+        }
+    }
+
 
     void Start()
     {
@@ -72,9 +90,9 @@ public class OBJLoaderScript : MonoBehaviour
             currentLoadedObj = null; // 念のため明示的にnullにする
         }
 
-        // RuntimeOBJLoader を使用してロード
-        OBJLoader loader = new OBJLoader();
-        currentLoadedObj = loader.Load(objFilePath);
+        // OBJLoaderを直接インスタンス化してロード
+        OBJLoader loader = new OBJLoader(); // インスタンス化
+        currentLoadedObj = loader.Load(objFilePath); // オブジェクトをロード
 
         // 読み込んだオブジェクトをシーンに配置
         if (currentLoadedObj != null)
@@ -101,6 +119,42 @@ public class OBJLoaderScript : MonoBehaviour
 
         Debug.Log($"Loading next OBJ: {objFilePaths[currentObjIndex]}");
         LoadOBJ(objFilePaths[currentObjIndex]);
+    }
+
+    /// <summary>
+    /// 前のOBJファイルをロード
+    /// </summary>
+    public void LoadPreviousOBJ()
+    {
+        if (objFilePaths.Length == 0)
+        {
+            Debug.LogError("OBJファイルリストが空です。");
+            return;
+        }
+
+        currentObjIndex = (currentObjIndex - 1 + objFilePaths.Length) % objFilePaths.Length;
+        Debug.Log($"前のOBJをロード中: {objFilePaths[currentObjIndex]}");
+        LoadOBJ(objFilePaths[currentObjIndex]);
+    }
+
+    /// <summary>
+    /// 名前で指定したOBJファイルをロード
+    /// </summary>
+    public void LoadOBJByName(string objFileName)
+    {
+        if (objFilePaths.Length == 0) return;
+        // ファイル名でインデックスを検索
+        int index = System.Array.FindIndex(objFilePaths, x => x.Contains(objFileName));
+        if (index >= 0)
+        {
+            currentObjIndex = index;
+            Debug.Log($"Loading OBJ by name: {objFilePaths[currentObjIndex]}");
+            LoadOBJ(objFilePaths[currentObjIndex]);
+        }
+        else
+        {
+            Debug.LogError($"指定した名前のOBJファイルが見つかりません: {objFileName}");
+        }
     }
 
     /// <summary>
