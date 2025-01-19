@@ -79,32 +79,35 @@ public class OBJLoaderScript : MonoBehaviour
     /// 指定したパスのOBJファイルをロード
     /// </summary>
     /// <param name="objFilePath">OBJファイルのパス</param>
+    
     public void LoadOBJ(string objFilePath)
     {
         Debug.Log($"Loading OBJ from: {objFilePath}");
-
-        // 前回ロードしたオブジェクトを削除
-        if (currentLoadedObj != null)
+        UnityMainThreadDispatcher.Enqueue(() =>
         {
-            DestroyImmediate(currentLoadedObj); // 古いオブジェクトを削除
-            currentLoadedObj = null; // 念のため明示的にnullにする
-        }
+                // 前回ロードしたオブジェクトを削除
+                if (currentLoadedObj != null)
+            {
+                DestroyImmediate(currentLoadedObj); // 古いオブジェクトを削除
+                currentLoadedObj = null; // 念のため明示的にnullにする
+            }
 
-        // OBJLoaderを直接インスタンス化してロード
-        OBJLoader loader = new OBJLoader(); // インスタンス化
-        currentLoadedObj = loader.Load(objFilePath); // オブジェクトをロード
+            // OBJLoaderを直接インスタンス化してロード
+            OBJLoader loader = new OBJLoader(); // インスタンス化
+            currentLoadedObj = loader.Load(objFilePath); // オブジェクトをロード
 
-        // 読み込んだオブジェクトをシーンに配置
-        if (currentLoadedObj != null)
-        {
-            currentLoadedObj.transform.position = Vector3.zero; // 初期位置を設定
-            AdjustScaleToBoundingBox(currentLoadedObj); // サイズ調整
-            Debug.Log("OBJファイルをロードしました");
-        }
-        else
-        {
-            Debug.LogError("OBJファイルのロードに失敗しました");
-        }
+            // 読み込んだオブジェクトをシーンに配置
+            if (currentLoadedObj != null)
+            {
+                currentLoadedObj.transform.position = Vector3.zero; // 初期位置を設定
+                AdjustScaleToBoundingBox(currentLoadedObj); // サイズ調整
+                Debug.Log("OBJファイルをロードしました");
+            }
+            else
+            {
+                Debug.LogError("OBJファイルのロードに失敗しました");
+            }
+        });
     }
 
     /// <summary>
