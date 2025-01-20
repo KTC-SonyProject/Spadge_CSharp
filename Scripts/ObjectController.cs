@@ -20,6 +20,7 @@ public class ObjeckController : MonoBehaviour
     private string persistentDataPath;
 
     public OBJLoaderScript OBJLoader;
+    public string objFileName;
 
     private ConcurrentQueue<string> messageQueue = new ConcurrentQueue<string>();
 
@@ -292,13 +293,10 @@ public class ObjeckController : MonoBehaviour
             File.WriteAllBytes(savePath, fileBuffer);
             Debug.Log($"ファイル受信・保存完了: {savePath} (サイズ: {fileSize}バイト)");
 
-            // obj_file_list.txtにパスを書き込む
-            string listFilePath = Path.Combine(modelsFolderPath, "obj_file_list.txt");
-            using (StreamWriter writer = new StreamWriter(listFilePath, append: true))
-            {
-                writer.WriteLine(savePath);
-            }
-            Debug.Log($"obj_file_list.txtにファイルパスを追加しました: {savePath}");
+            objFileName = fileName;
+            Debug.Log($"オブジェクトを読み取り中 : {objFileName}");
+            OBJLoader.LoadFilePaths();
+            OBJLoader.LoadOBJByName(objFileName);
 
             // レスポンス送信
             SendResponse("{\"status_code\": 200, \"status_message\": \"OK\", \"result\": \"file received\"}");

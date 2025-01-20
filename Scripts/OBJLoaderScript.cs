@@ -4,7 +4,6 @@ using Dummiesman;  // OBJLoaderのためのインポート
 
 public class OBJLoaderScript : MonoBehaviour
 {
-    public string fileListPath = "Assets/Models/obj_file_list.txt"; // テキストファイルのパス
     public Vector3 boundingBoxSize = new Vector3(5, 5, 5); // 指定する範囲のサイズ
 
     private string[] objFilePaths; // テキストから読み込んだOBJファイルのパスリスト
@@ -53,7 +52,7 @@ public class OBJLoaderScript : MonoBehaviour
     /// <summary>
     /// ファイルリストを読み込む
     /// </summary>
-    private void LoadFilePaths()
+    public void LoadFilePaths()
     {
         // Modelsフォルダーのパスを作成
         string modelsFolderPath = Path.Combine(persistentDataPath, "Models");
@@ -87,8 +86,6 @@ public class OBJLoaderScript : MonoBehaviour
     /// <summary>
     /// 指定したパスのOBJファイルをロード
     /// </summary>
-    /// <param name="objFilePath">OBJファイルのパス</param>
-
     public void LoadOBJ(string objFilePath)
     {
         Debug.Log($"Loading OBJ from: {objFilePath}");
@@ -156,7 +153,7 @@ public class OBJLoaderScript : MonoBehaviour
     {
         if (objFilePaths.Length == 0) return;
         // ファイル名でインデックスを検索
-        int index = System.Array.FindIndex(objFilePaths, x => x.Contains(objFileName));
+        int index = System.Array.FindIndex(objFilePaths, x => Path.GetFileName(x) == objFileName);
         if (index >= 0)
         {
             currentObjIndex = index;
