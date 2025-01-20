@@ -34,7 +34,6 @@ public class OBJLoaderScript : MonoBehaviour
 
     void Start()
     {
-
         LoadFilePaths();
         LoadFirstOBJ();
     }
@@ -82,22 +81,28 @@ public class OBJLoaderScript : MonoBehaviour
     {
         Debug.Log($"Loading OBJ from: {objFilePath}");
 
+
         // 前回ロードしたオブジェクトを削除
         if (currentLoadedObj != null)
         {
             DestroyImmediate(currentLoadedObj);
             currentLoadedObj = null;
+            Debug.Log("前回のオブジェクトを削除しました");
         }
 
         // OBJファイルをロード
-        OBJLoader loader = new OBJLoader();
-        currentLoadedObj = loader.Load(objFilePath);
-
+        OBJLoader loader = new OBJLoader(); 
+        Debug.Log(0);
+        // currentLoadedObj = loader.Load(objFilePath);  // ここでエラーが発生
+        currentLoadedObj = new OBJLoader().Load(objFilePath);   //試してみたが特に変わらず
+        Debug.Log(1);
         if (currentLoadedObj != null)
         {
-            currentLoadedObj.transform.position = Vector3.zero;
-            AdjustScaleToBoundingBox(currentLoadedObj);
             MaterialAndShaderHandler.ApplyMaterialAndShader(currentLoadedObj, objFilePath);
+            Debug.Log(2);
+            currentLoadedObj.transform.position = Vector3.zero;
+            Debug.Log(3);
+            AdjustScaleToBoundingBox(currentLoadedObj);
             Debug.Log("OBJファイルをロードしました");
         }
         else
