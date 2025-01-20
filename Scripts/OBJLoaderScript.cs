@@ -1,14 +1,13 @@
 using UnityEngine;
-using System.IO; // ファイル操作用
-using Dummiesman;  // OBJLoaderのためのインポート
+using System.IO;
+using Dummiesman; // OBJLoaderのためのインポート
 
 public class OBJLoaderScript : MonoBehaviour
 {
-    public Vector3 boundingBoxSize = new Vector3(5, 5, 5); // 指定する範囲のサイズ
-
-    private string[] objFilePaths; // テキストから読み込んだOBJファイルのパスリスト
-    private GameObject currentLoadedObj; // 現在ロード中のオブジェクト
-    private int currentObjIndex = 0; // 現在表示中のOBJのインデックス
+    public Vector3 boundingBoxSize = new Vector3(5, 5, 5);
+    private string[] objFilePaths;
+    private GameObject currentLoadedObj;
+    private int currentObjIndex = 0;
     private static OBJLoaderScript instance;
     private string persistentDataPath;
 
@@ -35,40 +34,24 @@ public class OBJLoaderScript : MonoBehaviour
 
     void Start()
     {
-        // OBJファイルリストの読み込み
-        LoadFilePaths();
 
-        // 最初のOBJをロード（存在する場合のみ）
-        if (objFilePaths.Length > 0)
-        {
-            LoadOBJ(objFilePaths[currentObjIndex]);
-        }
-        else
-        {
-            Debug.LogError("OBJファイルが読み込まれませんでした。");
-        }
+        LoadFilePaths();
+        LoadFirstOBJ();
     }
 
-    /// <summary>
-    /// ファイルリストを読み込む
-    /// </summary>
     public void LoadFilePaths()
     {
-        // Modelsフォルダーのパスを作成
         string modelsFolderPath = Path.Combine(persistentDataPath, "Models");
 
-        // フォルダーの存在を確認
         if (!Directory.Exists(modelsFolderPath))
         {
             Debug.LogError($"Modelsフォルダーが存在しません: {modelsFolderPath}");
-            objFilePaths = new string[0]; // 空の配列を設定
+            objFilePaths = new string[0];
             return;
         }
 
-        // Modelsフォルダー内のOBJファイルを検索
         objFilePaths = Directory.GetFiles(modelsFolderPath, "*.obj");
 
-        // ファイルが見つからない場合のエラーチェック
         if (objFilePaths.Length == 0)
         {
             Debug.LogError("Modelsフォルダー内にOBJファイルが見つかりませんでした");
@@ -83,56 +66,55 @@ public class OBJLoaderScript : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// 指定したパスのOBJファイルをロード
-    /// </summary>
+    private void LoadFirstOBJ()
+    {
+        if (objFilePaths.Length > 0)
+        {
+            LoadOBJ(objFilePaths[currentObjIndex]);
+        }
+        else
+        {
+            Debug.LogError("OBJファイルが読み込まれませんでした。");
+        }
+    }
+
     public void LoadOBJ(string objFilePath)
     {
         Debug.Log($"Loading OBJ from: {objFilePath}");
-        UnityMainThreadDispatcher.Enqueue(() =>
+
+        // 前回ロードしたオブジェクトを削除
+        if (currentLoadedObj != null)
         {
-                // 前回ロードしたオブジェクトを削除
-                if (currentLoadedObj != null)
-            {
-                DestroyImmediate(currentLoadedObj); // 古いオブジェクトを削除
-                currentLoadedObj = null; // 念のため明示的にnullにする
-            }
+            DestroyImmediate(currentLoadedObj);
+            currentLoadedObj = null;
+        }
 
-            // OBJLoaderを直接インスタンス化してロード
-            OBJLoader loader = new OBJLoader(); // インスタンス化
-            currentLoadedObj = loader.Load(objFilePath); // オブジェクトをロード
+        // OBJファイルをロード
+        OBJLoader loader = new OBJLoader();
+        currentLoadedObj = loader.Load(objFilePath);
 
-            // 読み込んだオブジェクトをシーンに配置
-            if (currentLoadedObj != null)
-            {
-                currentLoadedObj.transform.position = Vector3.zero; // 初期位置を設定
-                AdjustScaleToBoundingBox(currentLoadedObj); // サイズ調整
-                Debug.Log("OBJファイルをロードしました");
-            }
-            else
-            {
-                Debug.LogError("OBJファイルのロードに失敗しました");
-            }
-        });
+        if (currentLoadedObj != null)
+        {
+            currentLoadedObj.transform.position = Vector3.zero;
+            AdjustScaleToBoundingBox(currentLoadedObj);
+            MaterialAndShaderHandler.ApplyMaterialAndShader(currentLoadedObj, objFilePath);
+            Debug.Log("OBJファイルをロードしました");
+        }
+        else
+        {
+            Debug.LogError("OBJファイルのロードに失敗しました");
+        }
     }
 
-    /// <summary>
-    /// 次のOBJファイルをロード
-    /// </summary>
     public void LoadNextOBJ()
     {
         if (objFilePaths.Length == 0) return;
 
-        // 次のインデックスを計算
         currentObjIndex = (currentObjIndex + 1) % objFilePaths.Length;
-
         Debug.Log($"Loading next OBJ: {objFilePaths[currentObjIndex]}");
         LoadOBJ(objFilePaths[currentObjIndex]);
     }
 
-    /// <summary>
-    /// 前のOBJファイルをロード
-    /// </summary>
     public void LoadPreviousOBJ()
     {
         if (objFilePaths.Length == 0)
@@ -146,13 +128,11 @@ public class OBJLoaderScript : MonoBehaviour
         LoadOBJ(objFilePaths[currentObjIndex]);
     }
 
-    /// <summary>
-    /// 名前で指定したOBJファイルをロード
-    /// </summary>
+    // 名前で指定したOBJファイルをロード
     public void LoadOBJByName(string objFileName)
     {
         if (objFilePaths.Length == 0) return;
-        // ファイル名でインデックスを検索
+
         int index = System.Array.FindIndex(objFilePaths, x => Path.GetFileName(x) == objFileName);
         if (index >= 0)
         {
@@ -166,34 +146,174 @@ public class OBJLoaderScript : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// オブジェクトのサイズを調整して指定した範囲内に収める
-    /// </summary>
-    /// <param name="obj">ロードされたオブジェクト</param>
+    // バウンディングボックスに合わせてスケールを調整
     private void AdjustScaleToBoundingBox(GameObject obj)
     {
-        Renderer renderer = obj.GetComponentInChildren<Renderer>(); // 子要素も含めてRendererを取得
+        Bounds bounds = new Bounds(Vector3.zero, Vector3.zero);
+        bool hasBounds = false;
 
-        if (renderer == null)
+        Renderer[] renderers = obj.GetComponentsInChildren<Renderer>();
+        foreach (Renderer renderer in renderers)
         {
-            Debug.LogError("Rendererが見つかりません。オブジェクトにRendererコンポーネントを追加してください。");
+            if (hasBounds)
+            {
+                bounds.Encapsulate(renderer.bounds);
+            }
+            else
+            {
+                bounds = renderer.bounds;
+                hasBounds = true;
+            }
+        }
+
+        if (!hasBounds)
+        {
+            Debug.LogWarning("Rendererが見つかりません。デフォルトスケールを使用します。");
+            obj.transform.localScale = Vector3.one;
             return;
         }
 
-        // オブジェクトのサイズ（Bounds）
-        Vector3 objectSize = renderer.bounds.size;
+        Vector3 objectSize = bounds.size;
+        float scaleFactor = Mathf.Min(
+            boundingBoxSize.x / objectSize.x,
+            boundingBoxSize.y / objectSize.y,
+            boundingBoxSize.z / objectSize.z
+        );
 
-        // 各軸のスケール比を計算
-        float scaleX = boundingBoxSize.x / objectSize.x;
-        float scaleY = boundingBoxSize.y / objectSize.y;
-        float scaleZ = boundingBoxSize.z / objectSize.z;
-
-        // 比率を最小スケールに合わせて調整
-        float scale = Mathf.Min(scaleX, scaleY, scaleZ);
-
-        // スケール適用
-        obj.transform.localScale = obj.transform.localScale * scale;
-
+        obj.transform.localScale = new Vector3(scaleFactor, scaleFactor, scaleFactor);
         Debug.Log("オブジェクトのスケールを調整しました。");
+    }
+}
+
+
+// ここからシェーダーについて
+public static class MaterialAndShaderHandler
+{
+    public static void ApplyMaterialAndShader(GameObject obj, string objFilePath)
+    {
+        Debug.Log("Material and Shader適用プロセスを開始...");
+        Material material = LoadOrCreateMaterial(objFilePath);
+
+        if (material == null)
+        {
+            Debug.LogError("マテリアルの生成またはロードに失敗しました。");
+            return;
+        }
+
+        Debug.Log("マテリアルを全てのメッシュに適用します...");
+        ApplyMaterialToAllMeshes(obj, material);
+
+        Debug.Log("シェーダーを全てのメッシュに適用します...");
+        Shader shader = Shader.Find("Standard");
+        if (shader == null)
+        {
+            Debug.LogError("Standardシェーダーが見つかりません。処理を中断します。");
+            return;
+        }
+
+        ApplyShaderToAllMeshes(obj, shader);
+        Debug.Log("Material and Shader適用プロセスが完了しました。");
+    }
+
+    private static Material LoadOrCreateMaterial(string objFilePath)
+    {
+        Debug.Log("マテリアルをロードまたは作成中...");
+
+        string mtlFilePath = Path.ChangeExtension(objFilePath, ".mtl");
+        Debug.Log($"対応するMTLファイルのパス: {mtlFilePath}");
+
+        if (File.Exists(mtlFilePath))
+        {
+            Debug.Log($"MTLファイルをロード中: {mtlFilePath}");
+            return LoadMaterialFromMTL(mtlFilePath);
+        }
+        else
+        {
+            Debug.LogWarning("MTLファイルが見つかりません。デフォルトの赤色マテリアルを使用します。");
+            return CreateRedMaterial();
+        }
+    }
+
+    private static Material LoadMaterialFromMTL(string mtlFilePath)
+    {
+        try
+        {
+            Debug.Log("MTLファイルを読み込んで内容を解析します...");
+            string mtlContent = File.ReadAllText(mtlFilePath);
+            Debug.Log("MTLファイルの内容: " + mtlContent);
+
+            // 仮実装のため、ここで新しいMaterialを返す
+            Shader shader = Shader.Find("Standard");
+            return new Material(shader);
+        }
+        catch (System.Exception ex)
+        {
+            Debug.LogError($"MTLファイルの読み込み中にエラーが発生しました: {ex.Message}");
+            return null;
+        }
+    }
+
+    private static Material CreateRedMaterial()
+    {
+        Debug.Log("赤色マテリアルを作成中...");
+        Material redMaterial = new Material(Shader.Find("Standard"));
+
+        if (redMaterial == null)
+        {
+            Debug.LogError("赤色マテリアルの作成に失敗しました。");
+        }
+        else
+        {
+            redMaterial.color = Color.red;
+            Debug.Log("赤色マテリアルが正常に作成されました。");
+        }
+
+        return redMaterial;
+    }
+
+    private static void ApplyMaterialToAllMeshes(GameObject obj, Material material)
+    {
+        Debug.Log("全てのMeshRendererを取得してマテリアルを適用します...");
+        MeshRenderer[] meshRenderers = obj.GetComponentsInChildren<MeshRenderer>();
+
+        if (meshRenderers.Length == 0)
+        {
+            Debug.LogWarning("MeshRendererが見つかりませんでした。");
+            return;
+        }
+
+        foreach (var renderer in meshRenderers)
+        {
+            renderer.material = material;
+        }
+
+        Debug.Log("マテリアルの適用が完了しました。");
+    }
+
+    private static void ApplyShaderToAllMeshes(GameObject obj, Shader shader)
+    {
+        Debug.Log("全てのMeshRendererを取得してシェーダーを適用します...");
+        MeshRenderer[] meshRenderers = obj.GetComponentsInChildren<MeshRenderer>();
+
+        if (meshRenderers.Length == 0)
+        {
+            Debug.LogWarning("MeshRendererが見つかりませんでした。");
+            return;
+        }
+
+        foreach (var renderer in meshRenderers)
+        {
+            if (renderer.material != null)
+            {
+                renderer.material.shader = shader;
+                Debug.Log($"シェーダーを適用: {renderer.name}");
+            }
+            else
+            {
+                Debug.LogWarning($"MaterialがnullのRendererがあります: {renderer.name}");
+            }
+        }
+
+        Debug.Log("シェーダーの適用が完了しました。");
     }
 }
