@@ -5,9 +5,9 @@ using System.Text;
 using System.Threading;
 using System.Collections.Concurrent;
 using System.IO;
+using Dummiesman;
 
-
-public class ObjectsControll : MonoBehaviour
+public class ObjeckController : MonoBehaviour
 {
     public string serverIP = "127.0.0.1";
     public int serverPort = 8765;
@@ -19,10 +19,9 @@ public class ObjectsControll : MonoBehaviour
 
     private string persistentDataPath;
 
-    private ConcurrentQueue<string> messageQueue = new ConcurrentQueue<string>();
-
     public OBJLoaderScript OBJLoader;
-    private GameObject currentLoadedObj; // 現在のロード中のオブジェクト
+
+    private ConcurrentQueue<string> messageQueue = new ConcurrentQueue<string>();
 
     private class ReceivedFileData
     {
@@ -39,15 +38,6 @@ public class ObjectsControll : MonoBehaviour
 
     void Start()
     {
-        // Singletonパターンを使ってOBJLoaderを取得
-        OBJLoader = OBJLoaderScript.Instance;
-
-        if (OBJLoader == null)
-        {
-            Debug.LogError("OBJLoaderのインスタンス取得に失敗しました！");
-            return;
-        }
-
         ConnectToServer();
     }
 
@@ -227,7 +217,6 @@ public class ObjectsControll : MonoBehaviour
         }
     }
 
-
     private void HandleSceneCommand(string body)
     {
         try
@@ -260,9 +249,11 @@ public class ObjectsControll : MonoBehaviour
 
     private void HandleTransferCommand(string body)
     {
+        Debug.Log($"TRANSFERコマンド受信: {body}");
         try
         {
             var transferData = JsonUtility.FromJson<TransferCommandData>(body);
+            SendResponse("{\"status_code\": 200, \"status_message\": \"OK\", \"result\": \"object updated\"}");
             ReceiveFileData(transferData.file_name, transferData.file_size);
         }
         catch (Exception e)
@@ -276,6 +267,7 @@ public class ObjectsControll : MonoBehaviour
     {
         try
         {
+            // ファイルデータを受信
             byte[] fileBuffer = new byte[fileSize];
             int totalRead = 0;
 
@@ -289,10 +281,26 @@ public class ObjectsControll : MonoBehaviour
                 totalRead += bytesRead;
             }
 
-            string savePath = Path.Combine(persistentDataPath, fileName);
+            // 保存先のパスを作成 (Modelsフォルダー)
+            string modelsFolderPath = Path.Combine(persistentDataPath, "Models");
+            if (!Directory.Exists(modelsFolderPath))
+            {
+                Directory.CreateDirectory(modelsFolderPath); // フォルダーを作成
+            }
+
+            string savePath = Path.Combine(modelsFolderPath, fileName);
             File.WriteAllBytes(savePath, fileBuffer);
             Debug.Log($"ファイル受信・保存完了: {savePath} (サイズ: {fileSize}バイト)");
 
+            // obj_file_list.txtにパスを書き込む
+            string listFilePath = Path.Combine(modelsFolderPath, "obj_file_list.txt");
+            using (StreamWriter writer = new StreamWriter(listFilePath, append: true))
+            {
+                writer.WriteLine(savePath);
+            }
+            Debug.Log($"obj_file_list.txtにファイルパスを追加しました: {savePath}");
+
+            // レスポンス送信
             SendResponse("{\"status_code\": 200, \"status_message\": \"OK\", \"result\": \"file received\"}");
         }
         catch (Exception e)
@@ -301,6 +309,8 @@ public class ObjectsControll : MonoBehaviour
             SendResponse("{\"status_code\": 500, \"status_message\": \"Internal Server Error\", \"error\": \"Failed to receive file\"}");
         }
     }
+
+
 
     private void SendResponse(string responseBody)
     {

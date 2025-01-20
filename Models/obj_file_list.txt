@@ -1,3 +1,0 @@
-Assets/Models/couch.obj
-Assets/Models/Tree.obj
-Assets/Models/Container.obj

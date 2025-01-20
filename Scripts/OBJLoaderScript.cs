@@ -11,6 +11,7 @@ public class OBJLoaderScript : MonoBehaviour
     private GameObject currentLoadedObj; // 現在ロード中のオブジェクト
     private int currentObjIndex = 0; // 現在表示中のOBJのインデックス
     private static OBJLoaderScript instance;
+    private string persistentDataPath;
 
     public static OBJLoaderScript Instance
     {
@@ -28,6 +29,10 @@ public class OBJLoaderScript : MonoBehaviour
         }
     }
 
+    void Awake()
+    {
+        persistentDataPath = Application.persistentDataPath;
+    }
 
     void Start()
     {
@@ -50,28 +55,32 @@ public class OBJLoaderScript : MonoBehaviour
     /// </summary>
     private void LoadFilePaths()
     {
-        if (File.Exists(fileListPath))
-        {
-            objFilePaths = File.ReadAllLines(fileListPath);
+        // Modelsフォルダーのパスを作成
+        string modelsFolderPath = Path.Combine(persistentDataPath, "Models");
 
-            // ファイルが空でないかチェック
-            if (objFilePaths.Length == 0)
-            {
-                Debug.LogError("OBJファイルのリストが空です");
-            }
-            else
-            {
-                Debug.Log("OBJファイルのリストを読み込みました:");
-                foreach (var path in objFilePaths)
-                {
-                    Debug.Log(path);
-                }
-            }
+        // フォルダーの存在を確認
+        if (!Directory.Exists(modelsFolderPath))
+        {
+            Debug.LogError($"Modelsフォルダーが存在しません: {modelsFolderPath}");
+            objFilePaths = new string[0]; // 空の配列を設定
+            return;
+        }
+
+        // Modelsフォルダー内のOBJファイルを検索
+        objFilePaths = Directory.GetFiles(modelsFolderPath, "*.obj");
+
+        // ファイルが見つからない場合のエラーチェック
+        if (objFilePaths.Length == 0)
+        {
+            Debug.LogError("Modelsフォルダー内にOBJファイルが見つかりませんでした");
         }
         else
         {
-            Debug.LogError($"ファイルが見つかりません: {fileListPath}");
-            objFilePaths = new string[0]; // 空の配列を設定
+            Debug.Log("OBJファイルのリストを読み込みました:");
+            foreach (var path in objFilePaths)
+            {
+                Debug.Log(path);
+            }
         }
     }
 
@@ -79,7 +88,7 @@ public class OBJLoaderScript : MonoBehaviour
     /// 指定したパスのOBJファイルをロード
     /// </summary>
     /// <param name="objFilePath">OBJファイルのパス</param>
-    
+
     public void LoadOBJ(string objFilePath)
     {
         Debug.Log($"Loading OBJ from: {objFilePath}");
