@@ -80,34 +80,35 @@ public class OBJLoaderScript : MonoBehaviour
     public void LoadOBJ(string objFilePath)
     {
         Debug.Log($"Loading OBJ from: {objFilePath}");
-
-
-        // 前回ロードしたオブジェクトを削除
-        if (currentLoadedObj != null)
+        UnityMainThreadDispatcher.Enqueue(() =>
         {
-            DestroyImmediate(currentLoadedObj);
-            currentLoadedObj = null;
-            Debug.Log("前回のオブジェクトを削除しました");
-        }
+            // 前回ロードしたオブジェクトを削除
+            if (currentLoadedObj != null)
+            {
+                DestroyImmediate(currentLoadedObj);
+                currentLoadedObj = null;
+                Debug.Log("前回のオブジェクトを削除しました");
+            }
 
-        // OBJファイルをロード
-        OBJLoader loader = new OBJLoader();
+            // OBJファイルをロード
+            OBJLoader loader = new OBJLoader();
 
-        // MTLファイルのパスを取得
-        string mtlFilePath = Path.ChangeExtension(objFilePath, ".mtl");
-        Debug.Log($"対応するMTLファイルのパス: {mtlFilePath}");
+            // MTLファイルのパスを取得
+            string mtlFilePath = Path.ChangeExtension(objFilePath, ".mtl");
+            Debug.Log($"対応するMTLファイルのパス: {mtlFilePath}");
 
-        currentLoadedObj = new OBJLoader().Load(objFilePath, mtlFilePath);
-        if (currentLoadedObj != null)
-        {
-            currentLoadedObj.transform.position = Vector3.zero;
-            AdjustScaleToBoundingBox(currentLoadedObj);
-            Debug.Log("OBJファイルをロードしました");
-        }
-        else
-        {
-            Debug.LogError("OBJファイルのロードに失敗しました");
-        }
+            currentLoadedObj = new OBJLoader().Load(objFilePath, mtlFilePath);
+            if (currentLoadedObj != null)
+            {
+                currentLoadedObj.transform.position = Vector3.zero;
+                AdjustScaleToBoundingBox(currentLoadedObj);
+                Debug.Log("OBJファイルをロードしました");
+            }
+            else
+            {
+                Debug.LogError("OBJファイルのロードに失敗しました");
+            }
+        });
     }
 
     public void LoadNextOBJ()
