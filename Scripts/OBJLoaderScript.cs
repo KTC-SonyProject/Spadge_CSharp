@@ -92,16 +92,15 @@ public class OBJLoaderScript : MonoBehaviour
 
         // OBJファイルをロード
         OBJLoader loader = new OBJLoader(); 
-        Debug.Log(0);
-        // currentLoadedObj = loader.Load(objFilePath);  // ここでエラーが発生
-        currentLoadedObj = new OBJLoader().Load(objFilePath);   //試してみたが特に変わらず
-        Debug.Log(1);
+
+        // MTLファイルのパスを取得
+        string mtlFilePath = Path.ChangeExtension(objFilePath, ".mtl");
+        Debug.Log($"対応するMTLファイルのパス: {mtlFilePath}");
+
+        currentLoadedObj = new OBJLoader().Load(objFilePath,mtlFilePath);   
         if (currentLoadedObj != null)
         {
-            MaterialAndShaderHandler.ApplyMaterialAndShader(currentLoadedObj, objFilePath);
-            Debug.Log(2);
             currentLoadedObj.transform.position = Vector3.zero;
-            Debug.Log(3);
             AdjustScaleToBoundingBox(currentLoadedObj);
             Debug.Log("OBJファイルをロードしました");
         }
@@ -187,138 +186,5 @@ public class OBJLoaderScript : MonoBehaviour
 
         obj.transform.localScale = new Vector3(scaleFactor, scaleFactor, scaleFactor);
         Debug.Log("オブジェクトのスケールを調整しました。");
-    }
-}
-
-
-// ここからシェーダーについて
-public static class MaterialAndShaderHandler
-{
-    public static void ApplyMaterialAndShader(GameObject obj, string objFilePath)
-    {
-        Debug.Log("Material and Shader適用プロセスを開始...");
-        Material material = LoadOrCreateMaterial(objFilePath);
-
-        if (material == null)
-        {
-            Debug.LogError("マテリアルの生成またはロードに失敗しました。");
-            return;
-        }
-
-        Debug.Log("マテリアルを全てのメッシュに適用します...");
-        ApplyMaterialToAllMeshes(obj, material);
-
-        Debug.Log("シェーダーを全てのメッシュに適用します...");
-        Shader shader = Shader.Find("Standard");
-        if (shader == null)
-        {
-            Debug.LogError("Standardシェーダーが見つかりません。処理を中断します。");
-            return;
-        }
-
-        ApplyShaderToAllMeshes(obj, shader);
-        Debug.Log("Material and Shader適用プロセスが完了しました。");
-    }
-
-    private static Material LoadOrCreateMaterial(string objFilePath)
-    {
-        Debug.Log("マテリアルをロードまたは作成中...");
-
-        string mtlFilePath = Path.ChangeExtension(objFilePath, ".mtl");
-        Debug.Log($"対応するMTLファイルのパス: {mtlFilePath}");
-
-        if (File.Exists(mtlFilePath))
-        {
-            Debug.Log($"MTLファイルをロード中: {mtlFilePath}");
-            return LoadMaterialFromMTL(mtlFilePath);
-        }
-        else
-        {
-            Debug.LogWarning("MTLファイルが見つかりません。デフォルトの赤色マテリアルを使用します。");
-            return CreateRedMaterial();
-        }
-    }
-
-    private static Material LoadMaterialFromMTL(string mtlFilePath)
-    {
-        try
-        {
-            Debug.Log("MTLファイルを読み込んで内容を解析します...");
-            string mtlContent = File.ReadAllText(mtlFilePath);
-            Debug.Log("MTLファイルの内容: " + mtlContent);
-
-            // 仮実装のため、ここで新しいMaterialを返す
-            Shader shader = Shader.Find("Standard");
-            return new Material(shader);
-        }
-        catch (System.Exception ex)
-        {
-            Debug.LogError($"MTLファイルの読み込み中にエラーが発生しました: {ex.Message}");
-            return null;
-        }
-    }
-
-    private static Material CreateRedMaterial()
-    {
-        Debug.Log("赤色マテリアルを作成中...");
-        Material redMaterial = new Material(Shader.Find("Standard"));
-
-        if (redMaterial == null)
-        {
-            Debug.LogError("赤色マテリアルの作成に失敗しました。");
-        }
-        else
-        {
-            redMaterial.color = Color.red;
-            Debug.Log("赤色マテリアルが正常に作成されました。");
-        }
-
-        return redMaterial;
-    }
-
-    private static void ApplyMaterialToAllMeshes(GameObject obj, Material material)
-    {
-        Debug.Log("全てのMeshRendererを取得してマテリアルを適用します...");
-        MeshRenderer[] meshRenderers = obj.GetComponentsInChildren<MeshRenderer>();
-
-        if (meshRenderers.Length == 0)
-        {
-            Debug.LogWarning("MeshRendererが見つかりませんでした。");
-            return;
-        }
-
-        foreach (var renderer in meshRenderers)
-        {
-            renderer.material = material;
-        }
-
-        Debug.Log("マテリアルの適用が完了しました。");
-    }
-
-    private static void ApplyShaderToAllMeshes(GameObject obj, Shader shader)
-    {
-        Debug.Log("全てのMeshRendererを取得してシェーダーを適用します...");
-        MeshRenderer[] meshRenderers = obj.GetComponentsInChildren<MeshRenderer>();
-
-        if (meshRenderers.Length == 0)
-        {
-            Debug.LogWarning("MeshRendererが見つかりませんでした。");
-            return;
-        }
-
-        foreach (var renderer in meshRenderers)
-        {
-            if (renderer.material != null)
-            {
-                renderer.material.shader = shader;
-                Debug.Log($"シェーダーを適用: {renderer.name}");
-            }
-            else
-            {
-                Debug.LogWarning($"MaterialがnullのRendererがあります: {renderer.name}");
-            }
-        }
-
-        Debug.Log("シェーダーの適用が完了しました。");
     }
 }
