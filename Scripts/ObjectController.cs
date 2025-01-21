@@ -21,6 +21,7 @@ public class ObjeckController : MonoBehaviour
 
     public OBJLoaderScript OBJLoader;
     public string objFileName;
+    
 
     private ConcurrentQueue<string> messageQueue = new ConcurrentQueue<string>();
 
@@ -145,17 +146,31 @@ public class ObjeckController : MonoBehaviour
             case "CONTROL":
                 HandleControlCommand(body);
                 break;
-            case "SCENE":
-                HandleSceneCommand(body);
-                break;
-            case "UPDATE":
-                HandleUpdateCommand(body);
-                break;
             case "TRANSFER":
                 HandleTransferCommand(body);
                 break;
+            //case "SCENE":
+            //    HandleSceneCommand(body);
+            //    break;
+            case "UPDATE":
+                HandleUpdateCommand(body);
+                break;
+            case "NEXT":
+                OBJLoader.LoadNextOBJ();
+                SendResponse("{\"status_code\": 200, \"status_message\": \"OK\", \"result\": \"next command sccess\"}");
+                break;
+            case "PREVIOUS":
+                OBJLoader.LoadPreviousOBJ();
+                SendResponse("{\"status_code\": 200, \"status_message\": \"OK\", \"result\": \"previous command sccess\"}");
+                break;
+            case "LIST":
+                GetList();
+                break;
             case "PING":
                 SendResponse("{\"status_code\": 200, \"status_message\": \"OK\", \"message\": \"pong\"}");
+                break;
+            case "QUIT":
+                Quit();
                 break;
             default:
                 Debug.LogWarning($"不明なコマンドタイプ: {commandType}");
@@ -308,6 +323,30 @@ public class ObjeckController : MonoBehaviour
         }
     }
 
+    private void GetList()
+    {
+        string modelsFolderPath = Path.Combine(persistentDataPath, "Models");
+        if (!Directory.Exists(modelsFolderPath))
+        {
+            Debug.LogError($"Modelsフォルダーが存在しません: {modelsFolderPath}");
+            return;
+        }
+        string[] objFilePaths = Directory.GetFiles(modelsFolderPath, "*.obj");
+        if (objFilePaths.Length == 0)
+        {
+            Debug.LogError("Modelsフォルダー内にOBJファイルが見つかりませんでした");
+        }
+        else
+        {
+            Debug.Log("OBJファイルのリストを読み込みました:");
+            foreach (var path in objFilePaths)
+            {
+                Debug.Log(path);
+                SendResponse($"{{\"status_code\": 200, \"status_message\": \"OK\", \"result\": \"{path}\"}}");
+            }
+        }
+    }
+
 
 
     private void SendResponse(string responseBody)
@@ -353,6 +392,14 @@ public class ObjeckController : MonoBehaviour
             }
             Debug.Log("サーバーとの接続を終了しました");
         }
+    }
+    private void Quit()
+    {
+        Debug.Log("アプリケーションを終了します。");
+        UnityMainThreadDispatcher.Enqueue(() =>
+        {
+            Application.Quit();
+        });
     }
 
     [Serializable]
