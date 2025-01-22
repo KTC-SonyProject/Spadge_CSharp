@@ -5,6 +5,7 @@ using Dummiesman; // OBJLoaderのためのインポート
 public class OBJLoaderScript : MonoBehaviour
 {
     public Vector3 boundingBoxSize = new Vector3(5, 5, 5);
+    public Vector3 initialPosition = new Vector3(0, 5, 5);
     private string[] objFilePaths;
     private GameObject currentLoadedObj;
     private int currentObjIndex = 0;
@@ -76,12 +77,11 @@ public class OBJLoaderScript : MonoBehaviour
             Debug.LogError("OBJファイルが読み込まれませんでした。");
         }
     }
-
     public void LoadOBJ(string objFilePath)
     {
         Debug.Log($"Loading OBJ from: {objFilePath}");
         UnityMainThreadDispatcher.Enqueue(() =>
-        {
+        { 
             // 前回ロードしたオブジェクトを削除
             if (currentLoadedObj != null)
             {
@@ -100,7 +100,8 @@ public class OBJLoaderScript : MonoBehaviour
             currentLoadedObj = new OBJLoader().Load(objFilePath, mtlFilePath);
             if (currentLoadedObj != null)
             {
-                currentLoadedObj.transform.position = Vector3.zero;
+                // 初期位置を設定
+                currentLoadedObj.transform.position = initialPosition;
                 AdjustScaleToBoundingBox(currentLoadedObj);
                 Debug.Log("OBJファイルをロードしました");
             }

@@ -6,6 +6,7 @@ using System.Threading;
 using System.Collections.Concurrent;
 using System.IO;
 using Dummiesman;
+using System.Linq;
 
 public class ObjeckController : MonoBehaviour
 {
@@ -326,12 +327,15 @@ public class ObjeckController : MonoBehaviour
     private void GetList()
     {
         string modelsFolderPath = Path.Combine(persistentDataPath, "Models");
+
         if (!Directory.Exists(modelsFolderPath))
         {
             Debug.LogError($"Modelsフォルダーが存在しません: {modelsFolderPath}");
             return;
         }
+
         string[] objFilePaths = Directory.GetFiles(modelsFolderPath, "*.obj");
+
         if (objFilePaths.Length == 0)
         {
             Debug.LogError("Modelsフォルダー内にOBJファイルが見つかりませんでした");
@@ -339,13 +343,25 @@ public class ObjeckController : MonoBehaviour
         else
         {
             Debug.Log("OBJファイルのリストを読み込みました:");
-            foreach (var path in objFilePaths)
+
+            // ファイル名を取得してリストに変換
+            var fileNames = objFilePaths.Select(path => Path.GetFileName(path)).ToList();
+
+            // JSON形式にシリアライズ
+            string jsonResponse = JsonUtility.ToJson(new
             {
-                Debug.Log(path);
-                SendResponse($"{{\"status_code\": 200, \"status_message\": \"OK\", \"result\": \"{path}\"}}");
-            }
+                status_code = 200,
+                status_message = "OK",
+                result = fileNames
+            });
+
+            Debug.Log(jsonResponse);
+
+            // JSONを1回で送信
+            SendResponse(jsonResponse);
         }
     }
+
 
 
 
