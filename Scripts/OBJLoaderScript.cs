@@ -5,7 +5,7 @@ using Dummiesman; // OBJLoaderのためのインポート
 public class OBJLoaderScript : MonoBehaviour
 {
     public Vector3 boundingBoxSize = new Vector3(5, 5, 5);
-    public Vector3 initialPosition = new Vector3(0, 5, 5);
+    public Vector3 initialPosition = new Vector3(0, 0, 1);
     private string[] objFilePaths;
     private GameObject currentLoadedObj;
     private int currentObjIndex = 0;
@@ -153,11 +153,14 @@ public class OBJLoaderScript : MonoBehaviour
     }
 
     // バウンディングボックスに合わせてスケールを調整
+    // バウンディングボックスに合わせてスケールを調整
+    // バウンディングボックスに合わせてスケールを調整
     private void AdjustScaleToBoundingBox(GameObject obj)
     {
         Bounds bounds = new Bounds(Vector3.zero, Vector3.zero);
         bool hasBounds = false;
 
+        // 子オブジェクトのRendererからBoundsを取得
         Renderer[] renderers = obj.GetComponentsInChildren<Renderer>();
         foreach (Renderer renderer in renderers)
         {
@@ -172,6 +175,7 @@ public class OBJLoaderScript : MonoBehaviour
             }
         }
 
+        // Rendererが見つからない場合の対応
         if (!hasBounds)
         {
             Debug.LogWarning("Rendererが見つかりません。デフォルトスケールを使用します。");
@@ -179,14 +183,34 @@ public class OBJLoaderScript : MonoBehaviour
             return;
         }
 
+        // オブジェクトのサイズを取得
         Vector3 objectSize = bounds.size;
-        float scaleFactor = Mathf.Min(
+
+        // バウンディングボックスとのスケール倍率を計算
+        float scaleFactor = Mathf.Max(
             boundingBoxSize.x / objectSize.x,
             boundingBoxSize.y / objectSize.y,
             boundingBoxSize.z / objectSize.z
         );
 
+        // スケール倍率を適用
         obj.transform.localScale = new Vector3(scaleFactor, scaleFactor, scaleFactor);
-        Debug.Log("オブジェクトのスケールを調整しました。");
+
+        // デバッグ情報を追加
+        if (scaleFactor > 1)
+        {
+            Debug.Log($"オブジェクトを拡大しました: スケール倍率 = {scaleFactor}");
+        }
+        else if (scaleFactor < 1)
+        {
+            Debug.Log($"オブジェクトを縮小しました: スケール倍率 = {scaleFactor}");
+        }
+        else
+        {
+            Debug.Log("オブジェクトのスケールは変更されませんでした");
+        }
+
+        Debug.Log($"オブジェクトのスケールを調整しました: 新しいスケール = {obj.transform.localScale}");
     }
+
 }

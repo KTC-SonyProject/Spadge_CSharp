@@ -21,8 +21,9 @@ public class ObjeckController : MonoBehaviour
     private string persistentDataPath;
 
     public OBJLoaderScript OBJLoader;
-    public string objFileName;
-    
+    private string objFileName;
+    private string[] objFilePaths;
+
 
     private ConcurrentQueue<string> messageQueue = new ConcurrentQueue<string>();
 
@@ -324,18 +325,22 @@ public class ObjeckController : MonoBehaviour
         }
     }
 
-    private void GetList()
+    public void GetList()
     {
         string modelsFolderPath = Path.Combine(persistentDataPath, "Models");
 
+        // Modelsフォルダーが存在するか確認
         if (!Directory.Exists(modelsFolderPath))
         {
             Debug.LogError($"Modelsフォルダーが存在しません: {modelsFolderPath}");
+            objFilePaths = new string[0];  // ファイルパスの配列を空に設定
             return;
         }
 
-        string[] objFilePaths = Directory.GetFiles(modelsFolderPath, "*.obj");
+        // Modelsフォルダー内の*.objファイルを取得
+        objFilePaths = Directory.GetFiles(modelsFolderPath, "*.obj");
 
+        // OBJファイルが見つからない場合
         if (objFilePaths.Length == 0)
         {
             Debug.LogError("Modelsフォルダー内にOBJファイルが見つかりませんでした");
@@ -344,23 +349,21 @@ public class ObjeckController : MonoBehaviour
         {
             Debug.Log("OBJファイルのリストを読み込みました:");
 
-            // ファイル名を取得してリストに変換
+            // ファイル名のリストを作成
             var fileNames = objFilePaths.Select(path => Path.GetFileName(path)).ToList();
 
-            // JSON形式にシリアライズ
-            string jsonResponse = JsonUtility.ToJson(new
-            {
-                status_code = 200,
-                status_message = "OK",
-                result = fileNames
-            });
+            // JSON形式のレスポンスを直接作成
+            string jsonResponse = "{\"status_code\": 200, \"status_message\": \"OK\", \"result\": \"" + string.Join(", ", fileNames) + "\"}";
 
+            // デバッグログに出力
             Debug.Log(jsonResponse);
 
             // JSONを1回で送信
             SendResponse(jsonResponse);
         }
     }
+
+
 
 
 
