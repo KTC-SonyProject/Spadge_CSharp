@@ -219,7 +219,14 @@ public class ObjeckController : MonoBehaviour
                     OBJLoader.LoadPreviousOBJ();
                     Debug.Log("前のOBJファイルをロードしました");
                     break;
-
+                case "ON":
+                    OBJLoader.RotatorManage(true);
+                    Debug.Log("回転を開始しました");
+                    break;
+                case "OFF":
+                    OBJLoader.RotatorManage(false);
+                    Debug.Log("回転を停止しました");
+                    break;
                 default:
                     Debug.LogWarning($"不明なアクション: {commandData.action}");
                     SendResponse("{\"status_code\": 400, \"status_message\": \"Bad Request\", \"error\": \"Unknown action\"}");

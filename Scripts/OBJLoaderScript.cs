@@ -109,20 +109,30 @@ public class OBJLoaderScript : MonoBehaviour
                     Debug.Log("Rotatorが見つからなかったため、新しく追加します...");
                     rotator = currentLoadedObj.AddComponent<Rotator>();
                 }
-                if (rotator != null)
-                {
-                    rotator.StartRotation(currentLoadedObj);
-                }
-                else
-                {
-                    Debug.LogWarning("Rotatorコンポーネントが見つかりませんでした");
-                }
-
+                RotatorManage(true);
                 Debug.Log("OBJファイルをロードしました");
             }
             else
             {
                 Debug.LogError("OBJファイルのロードに失敗しました");
+            }
+        });
+    }
+
+    public void RotatorManage(bool isRotating)
+    {
+        UnityMainThreadDispatcher.Enqueue(() =>
+        {
+            if (rotator != null)
+            {
+                if (isRotating)
+                {
+                    rotator.StartRotation(currentLoadedObj);
+                }
+                else
+                {
+                    rotator.StopRotation(currentLoadedObj);
+                }
             }
         });
     }
