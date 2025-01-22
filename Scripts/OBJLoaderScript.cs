@@ -11,6 +11,7 @@ public class OBJLoaderScript : MonoBehaviour
     private int currentObjIndex = 0;
     private static OBJLoaderScript instance;
     private string persistentDataPath;
+    public Rotator rotator;
 
     public static OBJLoaderScript Instance
     {
@@ -27,7 +28,6 @@ public class OBJLoaderScript : MonoBehaviour
             return instance;
         }
     }
-
     void Awake()
     {
         persistentDataPath = Application.persistentDataPath;
@@ -81,7 +81,7 @@ public class OBJLoaderScript : MonoBehaviour
     {
         Debug.Log($"Loading OBJ from: {objFilePath}");
         UnityMainThreadDispatcher.Enqueue(() =>
-        { 
+        {
             // 前回ロードしたオブジェクトを削除
             if (currentLoadedObj != null)
             {
@@ -97,12 +97,27 @@ public class OBJLoaderScript : MonoBehaviour
             string mtlFilePath = Path.ChangeExtension(objFilePath, ".mtl");
             Debug.Log($"対応するMTLファイルのパス: {mtlFilePath}");
 
-            currentLoadedObj = new OBJLoader().Load(objFilePath, mtlFilePath);
+            currentLoadedObj = loader.Load(objFilePath, mtlFilePath);
             if (currentLoadedObj != null)
             {
                 // 初期位置を設定
                 currentLoadedObj.transform.position = initialPosition;
                 AdjustScaleToBoundingBox(currentLoadedObj);
+                rotator = currentLoadedObj.GetComponent<Rotator>();
+                if (rotator == null)
+                {
+                    Debug.Log("Rotatorが見つからなかったため、新しく追加します...");
+                    rotator = currentLoadedObj.AddComponent<Rotator>();
+                }
+                if (rotator != null)
+                {
+                    rotator.StartRotation(currentLoadedObj);
+                }
+                else
+                {
+                    Debug.LogWarning("Rotatorコンポーネントが見つかりませんでした");
+                }
+
                 Debug.Log("OBJファイルをロードしました");
             }
             else
@@ -111,6 +126,9 @@ public class OBJLoaderScript : MonoBehaviour
             }
         });
     }
+
+
+
 
     public void LoadNextOBJ()
     {
@@ -152,8 +170,6 @@ public class OBJLoaderScript : MonoBehaviour
         }
     }
 
-    // バウンディングボックスに合わせてスケールを調整
-    // バウンディングボックスに合わせてスケールを調整
     // バウンディングボックスに合わせてスケールを調整
     private void AdjustScaleToBoundingBox(GameObject obj)
     {
