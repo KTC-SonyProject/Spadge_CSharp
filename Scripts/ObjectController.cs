@@ -259,10 +259,12 @@ public class ObjeckController : MonoBehaviour
 
     private void HandleUpdateCommand(string body)
     {
+        string modelsFolderPath = Path.Combine(persistentDataPath, "Models");
         try
         {
-            var updateData = JsonUtility.FromJson<UpdateCommandData>(body);
-            Debug.Log($"オブジェクト {updateData.object_id} を {updateData.file_name} に更新します");
+            var objFileName = JsonUtility.FromJson<UpdateCommandData>(body);
+            Debug.Log($"UPDATEコマンド受信: {objFileName}に変更");
+            OBJLoader.LoadOBJByName(objFileName.file_name);
             SendResponse("{\"status_code\": 200, \"status_message\": \"OK\", \"result\": \"object updated\"}");
         }
         catch (Exception e)
