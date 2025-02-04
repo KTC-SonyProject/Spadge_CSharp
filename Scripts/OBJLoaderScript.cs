@@ -167,7 +167,10 @@ public class OBJLoaderScript : MonoBehaviour
     {
         if (objFilePaths.Length == 0) return;
 
-        int index = System.Array.FindIndex(objFilePaths, x => Path.GetFileName(x) == objFileName);
+        // .obj 拡張子を付与する
+        string objFileNameWithExtension = Path.ChangeExtension(objFileName, ".obj");
+
+        int index = System.Array.FindIndex(objFilePaths, x => Path.GetFileName(x) == objFileNameWithExtension);
         if (index >= 0)
         {
             currentObjIndex = index;
@@ -176,7 +179,7 @@ public class OBJLoaderScript : MonoBehaviour
         }
         else
         {
-            Debug.LogError($"指定した名前のOBJファイルが見つかりません: {objFileName}");
+            Debug.LogError($"指定した名前のOBJファイルが見つかりません: {objFileNameWithExtension}");
         }
     }
 
