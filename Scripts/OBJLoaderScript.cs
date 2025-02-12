@@ -12,6 +12,10 @@ public class OBJLoaderScript : MonoBehaviour
     private static OBJLoaderScript instance;
     private string persistentDataPath;
     public Rotator rotator;
+    public GameObject CurrentLoadedObj
+    {
+        get { return currentLoadedObj; }
+    }
 
     public static OBJLoaderScript Instance
     {

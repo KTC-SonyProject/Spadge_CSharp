@@ -8,7 +8,7 @@ using System.IO;
 using Dummiesman;
 using System.Linq;
 
-public class ObjeckController : MonoBehaviour
+public class ObjectController : MonoBehaviour
 {
     public string serverIP = "127.0.0.1";
     public int serverPort = 8765;
@@ -34,6 +34,7 @@ public class ObjeckController : MonoBehaviour
         public byte[] fileData;
     }
     private ConcurrentQueue<ReceivedFileData> fileQueue = new ConcurrentQueue<ReceivedFileData>();
+    private readonly string currentLoadedObj;
 
     void Awake()
     {
@@ -129,7 +130,8 @@ public class ObjeckController : MonoBehaviour
 
                     Debug.Log($"受信したBODY: {body}");
 
-                    HandleCommand(commandType, body);
+                    // メインスレッドでHandleCommandを呼び出す
+                    UnityMainThreadDispatcher.Enqueue(() => HandleCommand(commandType, body));
                 }
             }
         }
@@ -139,6 +141,7 @@ public class ObjeckController : MonoBehaviour
             Disconnect();
         }
     }
+
 
     private void HandleCommand(string commandType, string body)
     {
@@ -170,6 +173,9 @@ public class ObjeckController : MonoBehaviour
                 break;
             case "PING":
                 SendResponse("{\"status_code\": 200, \"status_message\": \"OK\", \"message\": \"pong\"}");
+                break;
+            case "GET_MODEL":
+                GetModel();
                 break;
             case "QUIT":
                 Quit();
@@ -371,6 +377,36 @@ public class ObjeckController : MonoBehaviour
             SendResponse(jsonResponse);
         }
     }
+
+    private void GetModel()
+    {
+        UnityMainThreadDispatcher.Enqueue(() =>
+        {
+            if (OBJLoaderScript.Instance != null)
+            {
+                GameObject model = OBJLoaderScript.Instance.CurrentLoadedObj;
+                if (model != null)
+                {
+                    string modelName = model.name;
+                    Debug.Log(modelName);
+                    SendResponse("{\"status_code\": 200, \"status_message\": \"OK\", \"result\": \"" + modelName + "\"}");
+                }
+                else
+                {
+                    Debug.LogError("現在ロードされているオブジェクトがありません。");
+                    SendResponse("{\"status_code\": 404, \"status_message\": \"Not Found\", \"error\": \"No object currently loaded\"}");
+                }
+            }
+            else
+            {
+                Debug.LogError("OBJLoaderScriptのインスタンスが見つかりません。");
+                SendResponse("{\"status_code\": 500, \"status_message\": \"Internal Server Error\", \"error\": \"OBJLoaderScript instance not found\"}");
+            }
+        });
+    }
+
+
+
 
 
 
