@@ -15,7 +15,7 @@ public class Rotator : MonoBehaviour
     private float rotateZ = 0f;
 
     // ‰ñ“]‚ğ§Œä‚·‚éƒtƒ‰ƒO
-    private bool isRotating = true;
+    private bool isRotating = false;
 
     // Update is called once per frame
     void Update()
