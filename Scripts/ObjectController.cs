@@ -23,6 +23,7 @@ public class ObjectController : MonoBehaviour
     public OBJLoaderScript OBJLoader;
     private string objFileName;
     private string[] objFilePaths;
+    private string[] objFilesName;
 
 
     private ConcurrentQueue<string> messageQueue = new ConcurrentQueue<string>();
@@ -169,6 +170,12 @@ public class ObjectController : MonoBehaviour
             case "LIST":
                 GetList();
                 break;
+            case "DELETE":
+                HandleDeleteCommand(body);
+                break;
+            case "ROTATIONAL":
+                HandleRotationalCommand(body);
+                break;
             case "GET_MODEL":
                 GetModel();
                 break;
@@ -293,6 +300,64 @@ public class ObjectController : MonoBehaviour
             SendResponse("{\"status_code\": 500, \"status_message\": \"Internal Server Error\", \"error\": \"Failed to process TRANSFER command\"}");
         }
     }
+
+    private void HandleDeleteCommand(string body)
+    {
+        try
+        {
+            var objFilesName = JsonUtility.FromJson<UpdateCommandData>(body);
+            Debug.Log($"DELETEコマンド受信: {objFilesName}に変更");
+            OBJLoader.DeleteOBJByName(objFilesName.file_name);
+            SendResponse("{\"status_code\": 200, \"status_message\": \"OK\", \"result\": \"object deleted\"}");
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"DELETEコマンド処理中にエラー: {e.Message}");
+            SendResponse("{\"status_code\": 500, \"status_message\": \"Internal Server Error\", \"error\": \"Failed to delete object\"}");
+        }
+    }
+
+    private void HandleRotationalCommand(string body)
+    {
+        // "state": ON or OFF
+        try
+        {
+            var actionParameters = JsonUtility.FromJson<ActionParameters>(body);
+            Debug.Log($"ROTATIONALコマンド受信: {actionParameters.state}");
+
+            if (actionParameters.state == "ON")
+            {
+                OBJLoader.RotatorManage(true);
+                Debug.Log("回転を開始しました");
+            }
+            else if (actionParameters.state == "OFF")
+            {
+                OBJLoader.RotatorManage(false);
+                Debug.Log("回転を停止しました");
+            }
+            else
+            {
+                Debug.LogError("ROTATIONALコマンドのアクションが不正です。");
+                SendResponse("{\"status_code\": 400, \"status_message\": \"Bad Request\", \"error\": \"Invalid action\"}");
+                return;
+            }
+            SendResponse("{\"status_code\": 200, \"status_message\": \"OK\", \"result\": \"success\"}");
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"ROTATIONALコマンド処理中にエラー: {e.Message}");
+            SendResponse("{\"status_code\": 500, \"status_message\": \"Internal Server Error\", \"error\": \"Failed to process ROTATIONAL command\"}");
+        }
+    }
+
+    [Serializable]
+    private class ActionParameters
+    {
+        public string state;
+    }
+
+
+
 
     private void ReceiveFileData(string fileName, long fileSize)
     {
@@ -465,6 +530,8 @@ public class ObjectController : MonoBehaviour
     {
         public string object_id;
         public string action;
+
+        public string action_parameters { get; internal set; }
     }
 
     [Serializable]

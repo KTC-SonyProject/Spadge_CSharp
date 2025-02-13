@@ -187,6 +187,17 @@ public class OBJLoaderScript : MonoBehaviour
         }
     }
 
+    public void DeleteOBJByName(string objFileName)
+    {
+        // objFileNameに一致するファイル(全ての拡張子)を削除
+        string[] files = Directory.GetFiles(persistentDataPath, objFileName + ".*");
+        foreach (string file in files)
+        {
+            File.Delete(file);
+            Debug.Log($"ファイルを削除しました: {file}");
+        }
+    }
+
     // バウンディングボックスに合わせてスケールを調整
     private void AdjustScaleToBoundingBox(GameObject obj)
     {
